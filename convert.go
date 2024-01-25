@@ -19,12 +19,12 @@ import (
 )
 
 const (
-	width  = 480
-	height = 400
+	width  = 240
+	height = 200
 )
 
 // Goのimage.Imageをlibwebp.WebPPictureに変換
-func imageToWebPPicture(img *image.Image) C.WebPPicture {
+func imageToWebPPicture(img *image.Image, scale float32, xOffset int, yOffset int) C.WebPPicture {
 	bounds := (*img).Bounds()
 	fmt.Printf("Dx: %v Dy: %v\n", bounds.Dx(), bounds.Dy())
 
@@ -38,8 +38,10 @@ func imageToWebPPicture(img *image.Image) C.WebPPicture {
 	// RGBAイメージに変換
 	rgbaImg := image.NewRGBA(image.Rect(0, 0, width, height))
 
-	xOffset := (width - bounds.Dx()) / 2
-	yOffset := (height - bounds.Dy()) / 2
+	fmt.Printf("xOffset: %v yOffset: %v\n", xOffset, yOffset)
+
+	xOffset = int(scale * float32(xOffset))
+	yOffset = int(scale * float32(yOffset))
 
 	draw.Draw(rgbaImg, image.Rect(xOffset, yOffset, width, height), *img, bounds.Min, draw.Src)
 
@@ -80,9 +82,11 @@ func ApngToWebP(imgPtr *[]byte) {
 	C.WebPAnimEncoderOptionsInit(&animConfig)
 	animEncoder := C.WebPAnimEncoderNew(C.int(width), C.int(height), &animConfig)
 
+	scale := float32(height) / float32(originalHeight)
+
 	i := 0
 	_, err := apng.DecodeAll(bytes.NewReader(*imgPtr),
-		func(frame *image.Image, frameNum int, frameDelay float32) error {
+		func(f *apng.FrameHookArgs) error {
 
 			if i == 0 {
 				// 最初のフレームはスキップ
@@ -108,12 +112,12 @@ func ApngToWebP(imgPtr *[]byte) {
 			*/
 
 			// webpとしてエンコード
-			pic := imageToWebPPicture(frame)
+			pic := imageToWebPPicture(f.Buffer, scale, f.OffsetX, f.OffsetY)
 
 			// リサイズ
 			C.WebPPictureRescale(&pic, C.int(width), C.int(height))
 
-			timeStamp := int(float32(i) * frameDelay * 1000)
+			timeStamp := int(float32(i) * f.Delay * 1000)
 			fmt.Printf("timeStamp: %d\n", timeStamp)
 
 			// Animated WebPのフレームとして追加
