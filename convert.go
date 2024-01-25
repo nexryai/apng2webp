@@ -18,13 +18,8 @@ import (
 	"unsafe"
 )
 
-const (
-	width  = 480
-	height = 400
-)
-
 // Goのimage.Imageをlibwebp.WebPPictureに変換
-func imageToWebPPicture(img *image.Image, scale float32, xOffset int, yOffset int) C.WebPPicture {
+func imageToWebPPicture(img *image.Image, scale float32, width int, height int, xOffset int, yOffset int) C.WebPPicture {
 	bounds := (*img).Bounds()
 	fmt.Printf("Dx: %v Dy: %v\n", bounds.Dx(), bounds.Dy())
 
@@ -38,20 +33,20 @@ func imageToWebPPicture(img *image.Image, scale float32, xOffset int, yOffset in
 	// RGBAイメージに変換
 	rgbaImg := image.NewRGBA(image.Rect(0, 0, width, height))
 
-	fmt.Printf("xOffset: %v yOffset: %v\n", xOffset, yOffset)
-
-	xOffset = int(scale * float32(xOffset))
-	yOffset = int(scale * float32(yOffset))
-
 	if scale != 1 {
-		newWidth := uint(float32((*img).Bounds().Dx()) * scale)
-		newHeight := uint(float32((*img).Bounds().Dy()) * scale)
+		newWidth := int(float32((*img).Bounds().Dx()) * scale)
+		newHeight := int(float32((*img).Bounds().Dy()) * scale)
+
+		//xOffset = int(float32(xOffset) * scale)
+		//yOffset = int(float32(yOffset) * scale)
 
 		fmt.Printf("newWidth: %v newHeight: %v\n", newWidth, newHeight)
-		draw.ApproxBiLinear.Scale(rgbaImg, image.Rect(xOffset, yOffset, width, height), *img, (*img).Bounds(), draw.Src, nil)
+		draw.ApproxBiLinear.Scale(rgbaImg, image.Rect(xOffset, yOffset, newWidth, newHeight), *img, bounds, draw.Src, nil)
 	} else {
 		draw.Draw(rgbaImg, image.Rect(xOffset, yOffset, width, height), *img, bounds.Min, draw.Src)
 	}
+
+	fmt.Printf("xOffset: %v yOffset: %v\n", xOffset, yOffset)
 
 	file, err := os.Create("debug.png")
 	if err != nil {
@@ -70,7 +65,7 @@ func imageToWebPPicture(img *image.Image, scale float32, xOffset int, yOffset in
 	return pic
 }
 
-func ApngToWebP(imgPtr *[]byte) {
+func ConvertAndSaveFile(imgPtr *[]byte, width int, height int, savePath string) {
 	// libwebpの初期化
 	buffer := bytes.NewBuffer(*imgPtr)
 	// Skip the first 8 bytes (PNG signature)
@@ -81,8 +76,6 @@ func ApngToWebP(imgPtr *[]byte) {
 
 	originalWidth := readInt32(buffer)
 	originalHeight := readInt32(buffer)
-
-	//scale := float32(height) / float32(originalHeight)
 
 	fmt.Printf("originalWidth: %d, originalHeight: %d\n", originalWidth, originalHeight)
 
@@ -106,22 +99,8 @@ func ApngToWebP(imgPtr *[]byte) {
 			println("frame:", i)
 			i += 1
 
-			// pngとしてframesディレクトリに保存
-			/*
-				pngFile, err := os.Create(fmt.Sprintf("frames/%d.png", frameNum))
-				if err != nil {
-					panic(err)
-				}
-				defer pngFile.Close()
-
-				err = png.Encode(pngFile, *frame)
-				if err != nil {
-					panic(err)
-				}
-			*/
-
 			// webpとしてエンコード
-			pic := imageToWebPPicture(f.Buffer, scale, f.OffsetX, f.OffsetY)
+			pic := imageToWebPPicture(f.Buffer, scale, width, height, f.OffsetX, f.OffsetY)
 
 			// リサイズ
 			C.WebPPictureRescale(&pic, C.int(width), C.int(height))
@@ -148,7 +127,7 @@ func ApngToWebP(imgPtr *[]byte) {
 	C.WebPDataInit(&webpData)
 	C.WebPAnimEncoderAssemble(animEncoder, &webpData)
 
-	webpFile, err := os.Create("output.webp")
+	webpFile, err := os.Create(savePath)
 	if err != nil {
 		panic(err)
 	}
