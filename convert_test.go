@@ -19,6 +19,14 @@ func TestApngToWebP(t *testing.T) {
 		panic(err)
 	}
 
-	ConvertAndSaveFile(&b, 480, 400, "output.webp")
+	rb, _ := Convert(&b, 480, 400)
+
+	// Write to file
+	f, err = os.Create("output.webp")
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = f.Write(*rb)
 	log.Printf("Done\n")
 }

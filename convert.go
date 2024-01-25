@@ -13,8 +13,6 @@ import (
 	"github.com/nexryai/apng"
 	"golang.org/x/image/draw"
 	"image"
-	"image/png"
-	"os"
 	"unsafe"
 )
 
@@ -48,24 +46,13 @@ func imageToWebPPicture(img *image.Image, scale float32, width int, height int, 
 
 	fmt.Printf("xOffset: %v yOffset: %v\n", xOffset, yOffset)
 
-	file, err := os.Create("debug.png")
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-
-	err = png.Encode(file, rgbaImg)
-	if err != nil {
-		panic(err)
-	}
-
 	// WebPにエンコード
 	C.WebPPictureImportRGBA(&pic, (*C.uint8_t)(unsafe.Pointer(&rgbaImg.Pix[0])), C.int(rgbaImg.Stride))
 
 	return pic
 }
 
-func ConvertAndSaveFile(imgPtr *[]byte, width int, height int, savePath string) {
+func Convert(imgPtr *[]byte, width int, height int) (*[]byte, error) {
 	// libwebpの初期化
 	buffer := bytes.NewBuffer(*imgPtr)
 	// Skip the first 8 bytes (PNG signature)
@@ -111,7 +98,9 @@ func ConvertAndSaveFile(imgPtr *[]byte, width int, height int, savePath string) 
 			// Animated WebPのフレームとして追加
 			result := C.int(C.WebPAnimEncoderAdd(animEncoder, &pic, C.int(timeStamp), nil))
 			if result == 0 {
-				panic("WebPAnimEncoderAdd failed")
+				// animEncoderの解放
+				C.WebPPictureFree(&pic)
+				return fmt.Errorf("WebPAnimEncoderAdd failed")
 			}
 
 			// Cleanup
@@ -120,23 +109,22 @@ func ConvertAndSaveFile(imgPtr *[]byte, width int, height int, savePath string) 
 			return nil
 		})
 
+	if err != nil {
+		C.WebPAnimEncoderDelete(animEncoder)
+		return nil, err
+	}
+
 	fmt.Printf("i: %v\n", i)
 
-	// ファイルに書き込み
+	// 書き込み
 	var webpData C.WebPData
 	C.WebPDataInit(&webpData)
 	C.WebPAnimEncoderAssemble(animEncoder, &webpData)
-
-	webpFile, err := os.Create(savePath)
-	if err != nil {
-		panic(err)
-	}
-	defer webpFile.Close()
-
 	webpBytes := C.GoBytes(unsafe.Pointer(webpData.bytes), C.int(webpData.size))
-	webpFile.Write(webpBytes)
 
 	// animEncoderの解放
 	C.WebPDataClear(&webpData)
 	C.WebPAnimEncoderDelete(animEncoder)
+
+	return &webpBytes, nil
 }
