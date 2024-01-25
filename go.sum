@@ -1,8 +1,4 @@
-github.com/nexryai/apng v0.0.0-20240124125633-43654420115e h1:rbHuuN9+7rEXtDs5q3I4Kll0L/ctrZ7pWvynA6LVlc4=
-github.com/nexryai/apng v0.0.0-20240124125633-43654420115e/go.mod h1:AYSOoTIs+2cJPM6qxPvetUwZpNdQLfM9YN9EPL6puW0=
-github.com/nexryai/apng v0.0.1 h1:C7AglKV7n5RTUDTH/QXhf3xqPnF78SDi8+NT6LTTTkk=
-github.com/nexryai/apng v0.0.1/go.mod h1:AYSOoTIs+2cJPM6qxPvetUwZpNdQLfM9YN9EPL6puW0=
-github.com/nexryai/apng v0.0.2 h1:zwrUwvfo7K6llbvoZ3LiM3pM0kj8gsjDIaQxStJcPY0=
-github.com/nexryai/apng v0.0.2/go.mod h1:AYSOoTIs+2cJPM6qxPvetUwZpNdQLfM9YN9EPL6puW0=
 github.com/nexryai/apng v0.0.3 h1:C2dcE1L+3FhRyjOnZQveCoiHvIagabesJUpBqZGbw6E=
 github.com/nexryai/apng v0.0.3/go.mod h1:AYSOoTIs+2cJPM6qxPvetUwZpNdQLfM9YN9EPL6puW0=
+golang.org/x/image v0.15.0 h1:kOELfmgrmJlw4Cdb7g/QGuB3CvDrXbqEIww/pNtNBm8=
+golang.org/x/image v0.15.0/go.mod h1:HUYqC05R2ZcZ3ejNQsIHQDQiwWM4JBqmm6MKANTp4LE=

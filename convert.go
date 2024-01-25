@@ -11,16 +11,16 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/nexryai/apng"
+	"golang.org/x/image/draw"
 	"image"
-	"image/draw"
 	"image/png"
 	"os"
 	"unsafe"
 )
 
 const (
-	width  = 240
-	height = 200
+	width  = 480
+	height = 400
 )
 
 // Goのimage.Imageをlibwebp.WebPPictureに変換
@@ -43,7 +43,15 @@ func imageToWebPPicture(img *image.Image, scale float32, xOffset int, yOffset in
 	xOffset = int(scale * float32(xOffset))
 	yOffset = int(scale * float32(yOffset))
 
-	draw.Draw(rgbaImg, image.Rect(xOffset, yOffset, width, height), *img, bounds.Min, draw.Src)
+	if scale != 1 {
+		newWidth := uint(float32((*img).Bounds().Dx()) * scale)
+		newHeight := uint(float32((*img).Bounds().Dy()) * scale)
+
+		fmt.Printf("newWidth: %v newHeight: %v\n", newWidth, newHeight)
+		draw.ApproxBiLinear.Scale(rgbaImg, image.Rect(xOffset, yOffset, width, height), *img, (*img).Bounds(), draw.Src, nil)
+	} else {
+		draw.Draw(rgbaImg, image.Rect(xOffset, yOffset, width, height), *img, bounds.Min, draw.Src)
+	}
 
 	file, err := os.Create("debug.png")
 	if err != nil {
@@ -68,8 +76,8 @@ func ApngToWebP(imgPtr *[]byte) {
 	// Skip the first 8 bytes (PNG signature)
 	buffer.Next(8)
 
-	// Skip chunk type (4 bytes)
-	buffer.Next(4)
+	// Skip chunk type (8 bytes)
+	buffer.Next(8)
 
 	originalWidth := readInt32(buffer)
 	originalHeight := readInt32(buffer)
@@ -83,6 +91,7 @@ func ApngToWebP(imgPtr *[]byte) {
 	animEncoder := C.WebPAnimEncoderNew(C.int(width), C.int(height), &animConfig)
 
 	scale := float32(height) / float32(originalHeight)
+	fmt.Printf("scale: %v\n", scale)
 
 	i := 0
 	_, err := apng.DecodeAll(bytes.NewReader(*imgPtr),
