@@ -1,2 +1,4 @@
 github.com/nexryai/apng v0.0.0-20240124125633-43654420115e h1:rbHuuN9+7rEXtDs5q3I4Kll0L/ctrZ7pWvynA6LVlc4=
 github.com/nexryai/apng v0.0.0-20240124125633-43654420115e/go.mod h1:AYSOoTIs+2cJPM6qxPvetUwZpNdQLfM9YN9EPL6puW0=
+github.com/nexryai/apng v0.0.1 h1:C7AglKV7n5RTUDTH/QXhf3xqPnF78SDi8+NT6LTTTkk=
+github.com/nexryai/apng v0.0.1/go.mod h1:AYSOoTIs+2cJPM6qxPvetUwZpNdQLfM9YN9EPL6puW0=
